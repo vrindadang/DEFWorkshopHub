@@ -28,14 +28,13 @@ import { createClient } from '@supabase/supabase-js';
  * ALTER TABLE workshops ENABLE ROW LEVEL SECURITY;
  * CREATE POLICY "Enable all access for everyone" ON workshops FOR ALL USING (true) WITH CHECK (true);
  * 
- * 3. ENVIRONMENT VARIABLES:
- * Ensure the following are set in your deployment environment:
- * - process.env.API_KEY (for Gemini AI)
- * - process.env.SUPABASE_URL (from Supabase project settings)
- * - process.env.SUPABASE_ANON_KEY (from Supabase project settings)
+ * 3. MANUAL DATA INSERTION (Run this if cloud is empty):
+ * INSERT INTO workshops (id, title, theme, category, lead, date, venue, frequency, agenda, speakers, activities, metrics, feedback, budget, actionPlan)
+ * VALUES ('1', 'Nurturing the Soul: Spiritual Curriculum 2024', '...', 'Spiritual Curriculum', 'Dr. Anita Sharma', '2024-03-15', '...', 'Annual', '[]', '[]', '[]', '{}', '{}', '{}', '[]')
+ * ON CONFLICT (id) DO NOTHING;
  */
 
-const supabaseUrl = process.env.SUPABASE_URL || 'https://lhetucfujitjisywjwkp.supabase.co';
-const supabaseKey = process.env.SUPABASE_ANON_KEY || 'sb_publishable_-FoCa_l-eD4Guvr1_M-t6w_oOY8i0XP';
+const supabaseUrl = 'https://lhetucfujitjisywjwkp.supabase.co';
+const supabaseKey = 'sb_publishable_-FoCa_l-eD4Guvr1_M-t6w_oOY8i0XP';
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
