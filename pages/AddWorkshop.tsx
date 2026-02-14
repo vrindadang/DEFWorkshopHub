@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Workshop, WorkshopCategory, Speaker, AgendaItem, BudgetItem } from '../types';
@@ -125,6 +124,18 @@ const AddWorkshop: React.FC<AddWorkshopProps> = ({ onAddWorkshop, onUpdateWorksh
     const newAgenda = [...formData.agenda];
     newAgenda[index] = { ...newAgenda[index], [field]: value };
     setFormData((prev) => ({ ...prev, agenda: newAgenda }));
+  };
+
+  const moveAgendaItem = (index: number, direction: 'up' | 'down') => {
+    const newAgenda = [...formData.agenda];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= newAgenda.length) return;
+    
+    const temp = newAgenda[index];
+    newAgenda[index] = newAgenda[targetIndex];
+    newAgenda[targetIndex] = temp;
+    
+    setFormData(prev => ({ ...prev, agenda: newAgenda }));
   };
 
   const handleSpeakerChange = (index: number, field: keyof Speaker, value: string) => {
@@ -340,7 +351,7 @@ const AddWorkshop: React.FC<AddWorkshopProps> = ({ onAddWorkshop, onUpdateWorksh
             <table className="w-full border-collapse">
               <thead>
                 <tr className="border-b border-slate-100">
-                  <th className="p-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest w-12 text-center">#</th>
+                  <th className="p-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest w-16 text-center">#</th>
                   <th className="p-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest w-32">Start</th>
                   <th className="p-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest w-32">End</th>
                   <th className="p-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Particulars</th>
@@ -353,7 +364,29 @@ const AddWorkshop: React.FC<AddWorkshopProps> = ({ onAddWorkshop, onUpdateWorksh
               <tbody className="divide-y divide-slate-50">
                 {formData.agenda.map((item, idx) => (
                   <tr key={idx} className="group hover:bg-slate-50/50 transition-colors">
-                    <td className="p-4 text-xs font-black text-slate-300 text-center">{(idx + 1).toString().padStart(2, '0')}</td>
+                    <td className="p-4 text-xs font-black text-slate-300 text-center relative">
+                      <div className="flex flex-col items-center gap-1 group-hover:text-indigo-400 transition-colors">
+                        <button 
+                          type="button" 
+                          onClick={() => moveAgendaItem(idx, 'up')}
+                          disabled={idx === 0}
+                          title="Move Up"
+                          className={`text-[8px] hover:text-indigo-600 focus:outline-none ${idx === 0 ? 'opacity-0 cursor-default' : 'opacity-100'}`}
+                        >
+                          ▲
+                        </button>
+                        <span>{(idx + 1).toString().padStart(2, '0')}</span>
+                        <button 
+                          type="button" 
+                          onClick={() => moveAgendaItem(idx, 'down')}
+                          disabled={idx === formData.agenda.length - 1}
+                          title="Move Down"
+                          className={`text-[8px] hover:text-indigo-600 focus:outline-none ${idx === formData.agenda.length - 1 ? 'opacity-0 cursor-default' : 'opacity-100'}`}
+                        >
+                          ▼
+                        </button>
+                      </div>
+                    </td>
                     <td className="p-4">
                       <input
                         type="time"
@@ -437,7 +470,7 @@ const AddWorkshop: React.FC<AddWorkshopProps> = ({ onAddWorkshop, onUpdateWorksh
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Total Allocated Budget (₹)</label>
               <input
                 type="number"
-                value={formData.budget.allocated}
+                value={formData.budget.allocated === 0 ? '' : formData.budget.allocated}
                 onChange={(e) => handleNestedChange('budget', 'allocated', Number(e.target.value))}
                 className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all font-black text-slate-800 text-lg"
                 placeholder="0"
@@ -458,9 +491,10 @@ const AddWorkshop: React.FC<AddWorkshopProps> = ({ onAddWorkshop, onUpdateWorksh
                       <span className="absolute left-4 top-3 text-slate-400 font-bold text-sm">₹</span>
                       <input
                         type="number"
-                        value={expense.amount}
+                        value={expense.amount === 0 ? '' : expense.amount}
                         onChange={(e) => handleBudgetExpenseChange(idx, 'amount', Number(e.target.value))}
                         className="w-full pl-8 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none text-sm font-black text-slate-800 text-right"
+                        placeholder="0"
                       />
                     </div>
                     <button type="button" onClick={() => removeBudgetExpense(idx)} className="text-red-300 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100">✕</button>

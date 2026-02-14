@@ -42,6 +42,10 @@ const WorkshopDetail: React.FC<WorkshopDetailProps> = ({ workshops, onDeleteWork
     }
   };
 
+  const handleExportPDF = () => {
+    window.print();
+  };
+
   if (!workshop) {
     return (
       <div className="text-center py-24">
@@ -62,9 +66,66 @@ const WorkshopDetail: React.FC<WorkshopDetailProps> = ({ workshops, onDeleteWork
 
   return (
     <div className="max-w-6xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-700 pb-20">
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media print {
+          aside, header, .no-print, .fixed, nav, button, a.no-print {
+            display: none !important;
+          }
+          body, #root {
+            background: white !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+          main {
+            padding: 0 !important;
+            margin: 0 !important;
+            background: white !important;
+            overflow: visible !important;
+            width: 100% !important;
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+          }
+          .flex, .grid {
+            display: flex !important;
+          }
+          .max-w-6xl {
+            max-width: 100% !important;
+            width: 100% !important;
+            padding: 2rem !important;
+          }
+          .bg-white, .bg-slate-50, .bg-indigo-900, .bg-indigo-50, .bg-green-50, .bg-amber-50 {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          .shadow-2xl, .shadow-xl, .shadow-sm {
+            box-shadow: none !important;
+            border: 1px solid #e2e8f0 !important;
+          }
+          .rounded-[2rem], .rounded-3xl, .rounded-[2.5rem], .rounded-2xl {
+            border-radius: 12px !important;
+          }
+          table {
+            page-break-inside: auto;
+            width: 100% !important;
+          }
+          tr {
+            page-break-inside: avoid;
+            page-break-after: auto;
+          }
+          section, .card {
+            page-break-inside: avoid;
+            margin-bottom: 2rem !important;
+          }
+          h1, h2, h3 {
+            page-break-after: avoid;
+          }
+        }
+      ` }} />
+
       {/* Detail Header Card */}
-      <div className="bg-white rounded-[2rem] p-10 border border-slate-200 shadow-2xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-50 rounded-full -mr-48 -mt-48 opacity-40 blur-3xl"></div>
+      <div className="bg-white rounded-[2rem] p-10 border border-slate-200 shadow-2xl relative overflow-hidden card">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-50 rounded-full -mr-48 -mt-48 opacity-40 blur-3xl no-print"></div>
         <div className="relative z-10 flex flex-col md:flex-row justify-between items-start gap-8">
           <div className="flex-1 space-y-4">
             <div className="flex items-center space-x-3">
@@ -78,7 +139,7 @@ const WorkshopDetail: React.FC<WorkshopDetailProps> = ({ workshops, onDeleteWork
             <h1 className="text-4xl md:text-5xl font-black text-slate-900 font-serif leading-tight">{workshop.title}</h1>
             <p className="text-xl text-slate-500 italic font-medium leading-relaxed max-w-2xl">"{workshop.theme}"</p>
           </div>
-          <div className="flex flex-col gap-3 shrink-0 w-full md:w-auto">
+          <div className="flex flex-col gap-3 shrink-0 w-full md:w-auto no-print">
             <Link 
               to={`/edit/${workshop.id}`}
               className="w-full text-center px-8 py-4 bg-indigo-600 text-white rounded-2xl text-sm font-black hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-3 uppercase tracking-widest"
@@ -91,7 +152,10 @@ const WorkshopDetail: React.FC<WorkshopDetailProps> = ({ workshops, onDeleteWork
             >
               <span>🗑️</span> Delete Record
             </button>
-            <button className="w-full px-8 py-3 bg-white border border-slate-200 text-slate-400 rounded-2xl text-[10px] font-bold hover:bg-slate-50 transition-all shadow-sm flex items-center justify-center gap-3 uppercase tracking-widest">
+            <button 
+              onClick={handleExportPDF}
+              className="w-full px-8 py-3 bg-white border border-slate-200 text-slate-400 rounded-2xl text-[10px] font-bold hover:bg-slate-50 transition-all shadow-sm flex items-center justify-center gap-3 uppercase tracking-widest"
+            >
               <span>📄</span> Export PDF
             </button>
           </div>
@@ -115,232 +179,190 @@ const WorkshopDetail: React.FC<WorkshopDetailProps> = ({ workshops, onDeleteWork
             <p className="text-base font-bold text-slate-800">{workshop.frequency}</p>
           </div>
           <div className="space-y-1">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Participants</p>
-            <p className="text-base font-bold text-slate-800">{workshop.metrics?.participantCount || 0}</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Reach</p>
+            <p className="text-base font-bold text-slate-800">{workshop.metrics?.participantCount || 0} Participants</p>
           </div>
         </div>
       </div>
 
-      {/* Budget Analysis Module */}
-      <section className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl overflow-hidden">
-        <div className="p-10 border-b border-slate-100 bg-green-50/20 flex justify-between items-center">
-          <h3 className="text-2xl font-bold text-slate-900 flex items-center font-serif">
-            <span className="mr-4 bg-white shadow-sm p-3 rounded-2xl text-xl">💰</span> Financial Audit
-          </h3>
-          <div className="flex items-center space-x-6">
-            <div className="text-right">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Allocated</p>
-              <p className="text-lg font-black text-slate-900">₹ {(workshop.budget?.allocated || 0).toLocaleString()}</p>
+      {/* Operational Timeline & Resource Persons */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        <div className="lg:col-span-2 space-y-10">
+          {/* Agenda Table */}
+          <section className="bg-white rounded-[2rem] border border-slate-200 shadow-xl overflow-hidden card">
+            <div className="p-8 border-b border-slate-50 bg-slate-50/30">
+              <h3 className="text-xl font-black text-slate-800 font-serif flex items-center">
+                <span className="mr-3 text-2xl">📅</span> Operational Timeline
+              </h3>
             </div>
-            <div className="h-10 w-px bg-slate-200"></div>
-            <div className="text-right">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Incurred</p>
-              <p className={`text-lg font-black ${budgetStatus === 'over' ? 'text-red-600' : 'text-green-600'}`}>
-                ₹ {totalIncurred.toLocaleString()}
-              </p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-slate-50/50">
+                    <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest w-24">Interval</th>
+                    <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Session / Particulars</th>
+                    <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Speaker</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {agenda.map((item, idx) => (
+                    <tr key={idx} className={item.isActivity ? 'bg-amber-50/30' : ''}>
+                      <td className="p-5 font-mono text-xs text-indigo-600 font-bold">
+                        {item.startTime} - {item.endTime}
+                      </td>
+                      <td className="p-5">
+                        <div className="font-bold text-slate-800 text-sm">
+                          {item.isActivity && <span className="mr-2 text-amber-500">🎨</span>}
+                          {item.particulars}
+                        </div>
+                        {item.remarks && <p className="text-[10px] text-slate-400 mt-1 italic font-medium">{item.remarks}</p>}
+                      </td>
+                      <td className="p-5 text-sm font-semibold text-slate-600">{item.speaker || '--'}</td>
+                    </tr>
+                  ))}
+                  {agenda.length === 0 && (
+                    <tr>
+                      <td colSpan={3} className="p-10 text-center text-slate-400 italic">No agenda items cataloged.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
-            <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
-              budgetStatus === 'over' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
-            }`}>
-              {budgetStatus === 'over' ? 'Budget Overrun' : 'Within Budget'}
+          </section>
+
+          {/* Action Plan */}
+          <section className="bg-indigo-900 rounded-[2rem] p-10 text-white shadow-2xl relative overflow-hidden card">
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-amber-500"></div>
+            <h3 className="text-2xl font-black mb-8 font-serif">Institutional Action Plan</h3>
+            <div className="space-y-4">
+              {actionPlan.map((step, idx) => (
+                <div key={idx} className="flex items-start gap-5 p-5 bg-white/5 rounded-2xl border border-white/5 backdrop-blur-sm">
+                  <span className="w-8 h-8 rounded-xl bg-amber-500 flex items-center justify-center text-[10px] font-black shrink-0 shadow-lg">
+                    {(idx + 1).toString().padStart(2, '0')}
+                  </span>
+                  <p className="text-sm font-medium leading-relaxed text-indigo-50">{step}</p>
+                </div>
+              ))}
+              {actionPlan.length === 0 && <p className="text-indigo-300 italic">No post-workshop actions specified.</p>}
+            </div>
+          </section>
+        </div>
+
+        <div className="space-y-10">
+          {/* Resource Profiles */}
+          <section className="bg-white rounded-[2rem] border border-slate-200 shadow-xl overflow-hidden card">
+            <div className="p-8 border-b border-slate-50 bg-slate-50/30">
+              <h3 className="text-xl font-black text-slate-800 font-serif">Resource Persons</h3>
+            </div>
+            <div className="p-8 space-y-8">
+              {speakers.map((speaker, idx) => (
+                <div key={idx} className="space-y-3">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 font-black text-lg">
+                      {speaker.name?.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="text-base font-black text-slate-800">{speaker.name}</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{speaker.designation}</p>
+                    </div>
+                  </div>
+                  <div className="p-4 bg-slate-50 rounded-xl italic text-xs text-slate-500 leading-relaxed border-l-2 border-indigo-200">
+                    "{speaker.takeaways}"
+                  </div>
+                </div>
+              ))}
+              {speakers.length === 0 && <p className="text-center text-slate-400 italic">No speakers listed.</p>}
+            </div>
+          </section>
+
+          {/* Training Modules */}
+          <section className="bg-amber-50 rounded-[2rem] p-8 border border-amber-100 shadow-sm card">
+            <h3 className="text-lg font-black text-amber-900 font-serif mb-6 flex items-center">
+              <span className="mr-3">🧩</span> Activity Matrix
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {activities.map((act, idx) => (
+                <span key={idx} className="px-4 py-2 bg-white text-amber-700 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm border border-amber-200/50">
+                  {act}
+                </span>
+              ))}
+              {activities.length === 0 && <p className="text-amber-600/60 text-xs italic">No specific activities cataloged.</p>}
+            </div>
+          </section>
+
+          {/* Financial Audit */}
+          <section className="bg-white rounded-[2.5rem] p-8 border border-slate-200 shadow-xl card">
+             <h3 className="text-lg font-black text-slate-800 font-serif mb-6">Financial Audit</h3>
+             <div className="space-y-6">
+                <div className="flex justify-between items-center bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                  <div>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Total Budget</p>
+                    <p className="text-xl font-black text-slate-900">₹ {(workshop.budget?.allocated || 0).toLocaleString()}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Audit Status</p>
+                    <span className={`text-[10px] font-black uppercase tracking-widest ${
+                      budgetStatus === 'within' ? 'text-green-600' : 
+                      budgetStatus === 'over' ? 'text-red-600' : 'text-slate-500'
+                    }`}>
+                      {budgetStatus === 'within' ? 'Optimal' : budgetStatus === 'over' ? 'Deficit' : 'N/A'}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Incurred Expenses</p>
+                  <div className="space-y-2">
+                    {workshop.budget?.expenses?.map((exp, idx) => (
+                      <div key={idx} className="flex justify-between text-xs py-2 border-b border-slate-50">
+                        <span className="font-medium text-slate-600">{exp.description}</span>
+                        <span className="font-bold text-slate-800">₹ {exp.amount?.toLocaleString()}</span>
+                      </div>
+                    ))}
+                    <div className="flex justify-between pt-3 text-sm">
+                      <span className="font-black text-slate-400 uppercase tracking-tighter">Cumulative</span>
+                      <span className={`font-black ${budgetStatus === 'over' ? 'text-red-600' : 'text-indigo-600'}`}>
+                        ₹ {totalIncurred.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+             </div>
+          </section>
+        </div>
+      </div>
+
+      {/* Feedback Section */}
+      <section className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl overflow-hidden card">
+        <div className="grid grid-cols-1 md:grid-cols-4">
+          <div className="p-10 bg-indigo-50 border-r border-slate-100 flex flex-col justify-center items-center text-center">
+            <div className="text-5xl font-black text-indigo-600 mb-2">{workshop.feedback?.averageRating || 'N/A'}</div>
+            <div className="flex mb-4">
+              {[...Array(5)].map((_, i) => (
+                <span key={i} className={`text-xl ${i < Math.round(workshop.feedback?.averageRating || 0) ? 'text-amber-400' : 'text-indigo-100'}`}>★</span>
+              ))}
+            </div>
+            <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">Composite Satisfaction Score</p>
+          </div>
+          <div className="col-span-3 p-10 space-y-6">
+            <h3 className="text-xl font-black text-slate-800 font-serif">Qualitative Impact Feedback</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {feedbackComments.map((comment, idx) => (
+                <div key={idx} className="p-5 bg-slate-50 rounded-2xl border border-slate-100 italic text-sm text-slate-600 leading-relaxed relative">
+                  <span className="absolute top-2 left-2 text-3xl text-slate-200 opacity-50 font-serif">“</span>
+                  <p className="relative z-10">{comment}</p>
+                </div>
+              ))}
+              {feedbackComments.length === 0 && <p className="text-slate-400 italic">No comments cataloged yet.</p>}
             </div>
           </div>
-        </div>
-        <div className="p-10">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-slate-100">
-                <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Description</th>
-                <th className="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Amount (₹)</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {workshop.budget?.expenses?.map((expense, i) => (
-                <tr key={i} className="hover:bg-slate-50 transition-colors">
-                  <td className="p-4 text-sm font-semibold text-slate-700">{expense.description}</td>
-                  <td className="p-4 text-sm font-black text-slate-900 text-right">₹ {(expense.amount || 0).toLocaleString()}</td>
-                </tr>
-              ))}
-              {(!workshop.budget?.expenses || workshop.budget.expenses.length === 0) && (
-                <tr>
-                  <td colSpan={2} className="p-8 text-center text-sm text-slate-400 italic">No incurred expenses documented for this cycle.</td>
-                </tr>
-              )}
-            </tbody>
-            <tfoot className="bg-slate-50/50">
-              <tr>
-                <td className="p-4 text-sm font-black text-slate-900 uppercase">Total Utilization</td>
-                <td className="p-4 text-sm font-black text-slate-900 text-right">₹ {totalIncurred.toLocaleString()}</td>
-              </tr>
-            </tfoot>
-          </table>
         </div>
       </section>
 
-      {/* Main Content Grid */}
-      <div className="space-y-10">
-        {/* Agenda Section */}
-        <section className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden">
-          <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-            <h3 className="text-2xl font-bold text-slate-900 flex items-center font-serif">
-              <span className="mr-4 bg-white shadow-sm p-3 rounded-2xl text-xl">📅</span> Workshop Agenda
-            </h3>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Time-Bound Sessions</p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50/30 border-b border-slate-100">
-                  <th className="p-6 text-[10px] font-black text-slate-500 uppercase tracking-widest w-20">S.No</th>
-                  <th className="p-6 text-[10px] font-black text-slate-500 uppercase tracking-widest w-32">Timeline</th>
-                  <th className="p-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Description & Particulars</th>
-                  <th className="p-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Speaker/Resource</th>
-                  <th className="p-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Admin Remarks</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {agenda.map((item, i) => (
-                  <tr key={i} className="hover:bg-indigo-50/20 transition-all">
-                    <td className="p-6 text-sm font-black text-slate-300">{(i + 1).toString().padStart(2, '0')}</td>
-                    <td className="p-6">
-                      <div className="flex flex-col text-xs font-bold text-indigo-600 space-y-1">
-                        <span className="bg-indigo-50 px-2 py-1 rounded-md text-center">{item.startTime}</span>
-                        <span className="bg-slate-50 px-2 py-1 rounded-md text-center text-slate-400">TO</span>
-                        <span className="bg-indigo-50 px-2 py-1 rounded-md text-center">{item.endTime}</span>
-                      </div>
-                    </td>
-                    <td className="p-6">
-                      <div className="flex flex-col">
-                        <span className="text-base font-bold text-slate-800 leading-tight">{item.particulars}</span>
-                        {item.isActivity && (
-                          <span className="mt-2 inline-flex items-center px-2 py-0.5 bg-amber-50 text-amber-700 text-[9px] font-black uppercase rounded-full border border-amber-100">
-                             ✨ Collaborative Activity
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-6 text-sm font-semibold text-slate-600">{item.speaker || '—'}</td>
-                    <td className="p-6 text-xs text-slate-400 italic leading-relaxed">{item.remarks}</td>
-                  </tr>
-                ))}
-                {agenda.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="p-12 text-center text-slate-400 italic">No agenda segments defined.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-          {/* Speakers Section */}
-          <section className="bg-white p-10 rounded-[2rem] border border-slate-200 shadow-xl space-y-8">
-            <h3 className="text-2xl font-bold text-slate-900 flex items-center font-serif">
-              <span className="mr-4 bg-indigo-50 p-3 rounded-2xl text-xl">🎤</span> Resource Persons
-            </h3>
-            <div className="space-y-6">
-              {speakers.map((s, i) => (
-                <div key={i} className="p-6 rounded-3xl bg-slate-50 border border-slate-100 group hover:bg-white hover:shadow-lg transition-all">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-lg font-black text-slate-900 group-hover:text-indigo-600 transition-colors">{s.name}</p>
-                      <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest mt-1">{s.designation || 'Special Guest'}</p>
-                    </div>
-                  </div>
-                  <div className="mt-4 pt-4 border-t border-slate-200/50">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Core Contribution</p>
-                    <p className="text-sm text-slate-600 leading-relaxed italic">
-                      "{s.takeaways || 'No primary takeaway recorded.'}"
-                    </p>
-                  </div>
-                </div>
-              ))}
-              {speakers.length === 0 && <p className="text-sm text-slate-400 italic text-center">No resource persons documented.</p>}
-            </div>
-          </section>
-
-          {/* Activities Section */}
-          <section className="bg-white p-10 rounded-[2rem] border border-slate-200 shadow-xl space-y-8">
-            <h3 className="text-2xl font-bold text-slate-900 flex items-center font-serif">
-              <span className="mr-4 bg-amber-50 p-3 rounded-2xl text-xl">🎨</span> Training Modules
-            </h3>
-            <div className="grid grid-cols-1 gap-4">
-              {activities.map((a, i) => (
-                <div key={i} className="flex items-center space-x-4 p-5 bg-amber-50/30 rounded-2xl border border-amber-100/50 hover:bg-amber-50 transition-colors">
-                  <span className="w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-sm text-amber-600 text-xs font-bold">
-                    {i+1}
-                  </span>
-                  <span className="text-sm font-bold text-slate-700">{a}</span>
-                </div>
-              ))}
-              {activities.length === 0 && <p className="text-sm text-slate-400 italic text-center">No training modules listed.</p>}
-            </div>
-          </section>
-        </div>
-
-        {/* Action Plan & Feedback Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-          <section className="bg-indigo-900 text-white p-10 rounded-[2rem] shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-32 h-32 bg-white/5 rounded-full -ml-16 -mt-16 blur-xl"></div>
-            <h3 className="text-2xl font-bold mb-8 flex items-center font-serif relative z-10">
-              <span className="mr-4 bg-indigo-800 p-3 rounded-2xl text-xl">🚀</span> Action Points
-            </h3>
-            <div className="space-y-6 relative z-10">
-              {actionPlan.map((p, i) => (
-                <div key={i} className="flex items-start space-x-5 bg-white/10 p-5 rounded-2xl border border-white/10 backdrop-blur-sm group hover:bg-white/20 transition-all">
-                  <span className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-xs font-black shrink-0 shadow-lg">
-                    {i+1}
-                  </span>
-                  <p className="text-sm font-medium leading-relaxed text-indigo-50">{p}</p>
-                </div>
-              ))}
-              {actionPlan.length === 0 && <p className="text-sm text-indigo-300 italic">No action points recorded for this cycle.</p>}
-            </div>
-          </section>
-
-          <section className="bg-white p-10 rounded-[2rem] border border-slate-200 shadow-xl space-y-8">
-            <h3 className="text-2xl font-bold text-slate-900 flex items-center font-serif">
-              <span className="mr-4 bg-slate-50 p-3 rounded-2xl text-xl">💬</span> Feedback Analysis
-            </h3>
-            <div className="space-y-8">
-              <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
-                <div className="flex justify-between items-end mb-4">
-                  <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Satisfaction Score</p>
-                    <p className="text-4xl font-black text-indigo-600 mt-1">{workshop.feedback?.averageRating || 0} <span className="text-lg text-slate-300">/ 5.0</span></p>
-                  </div>
-                  <div className="flex gap-1 mb-2">
-                    {[...Array(5)].map((_, i) => (
-                      <span key={i} className={`text-xl ${i < Math.round(workshop.feedback?.averageRating || 0) ? 'text-amber-400' : 'text-slate-200'}`}>★</span>
-                    ))}
-                  </div>
-                </div>
-                <div className="w-full bg-slate-200 rounded-full h-3 p-1 overflow-hidden">
-                  <div 
-                    className="bg-indigo-600 h-full rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(79,70,229,0.5)]" 
-                    style={{ width: `${((workshop.feedback?.averageRating || 0) / 5) * 100}%` }}
-                  ></div>
-                </div>
-              </div>
-              
-              <div className="space-y-4">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center">
-                  <span className="w-2 h-2 bg-indigo-500 rounded-full mr-2"></span>
-                  Qualitative Summary
-                </p>
-                <div className="space-y-3">
-                  {feedbackComments.map((c, i) => (
-                    <div key={i} className="text-sm italic text-slate-600 border-l-4 border-indigo-100 pl-4 py-1 leading-relaxed">
-                      "{c}"
-                    </div>
-                  ))}
-                  {feedbackComments.length === 0 && <p className="text-xs text-slate-400 italic">No qualitative comments documented.</p>}
-                </div>
-              </div>
-            </div>
-          </section>
-        </div>
+      {/* Footer Branding for Institutional use */}
+      <div className="text-center pt-20 border-t border-slate-100 pb-10 print:pt-4">
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.5em]">Darshan Academy Educational Hub</p>
+        <p className="text-[8px] text-slate-300 mt-2">© {new Date().getFullYear()} Darshan Education Foundation. Strictly for internal administrative purposes.</p>
       </div>
     </div>
   );

@@ -1,37 +1,43 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * DATABASE SETUP INSTRUCTIONS:
+ * DARSHAN HUB - CLOUD PERSISTENCE SETUP
  * 
- * 1. RUN SCHEMA DEFINITION:
- * CREATE TABLE IF NOT EXISTS workshops (
- *   id TEXT PRIMARY KEY,
- *   title TEXT NOT NULL,
- *   theme TEXT,
- *   category TEXT NOT NULL,
- *   lead TEXT NOT NULL,
- *   date DATE NOT NULL,
- *   venue TEXT,
- *   frequency TEXT,
- *   agenda JSONB DEFAULT '[]'::jsonb,
- *   speakers JSONB DEFAULT '[]'::jsonb,
- *   activities JSONB DEFAULT '[]'::jsonb,
- *   metrics JSONB DEFAULT '{}'::jsonb,
- *   feedback JSONB DEFAULT '{}'::jsonb,
- *   budget JSONB DEFAULT '{}'::jsonb,
- *   actionPlan JSONB DEFAULT '[]'::jsonb,
- *   created_at TIMESTAMPTZ DEFAULT NOW()
+ * To ensure your workshops are saved and persist after a refresh, 
+ * copy and execute the following SQL in your Supabase SQL Editor:
+ * 
+ * ------------------------------------------------------------------
+ * -- 1. Create (or update) the workshops table
+ * CREATE TABLE IF NOT EXISTS public.workshops (
+ *   id text NOT NULL,
+ *   title text NOT NULL,
+ *   theme text,
+ *   category text NOT NULL,
+ *   lead text NOT NULL,
+ *   date date NOT NULL,
+ *   venue text,
+ *   frequency text,
+ *   agenda jsonb DEFAULT '[]'::jsonb,
+ *   speakers jsonb DEFAULT '[]'::jsonb,
+ *   activities jsonb DEFAULT '[]'::jsonb,
+ *   metrics jsonb DEFAULT '{"participantCount": 0, "demographic": ""}'::jsonb,
+ *   feedback jsonb DEFAULT '{"averageRating": 0, "qualitativeComments": []}'::jsonb,
+ *   budget jsonb DEFAULT '{"allocated": 0, "expenses": []}'::jsonb,
+ *   "actionPlan" jsonb DEFAULT '[]'::jsonb, -- Use double quotes for camelCase preservation
+ *   created_at timestamp with time zone DEFAULT now(),
+ *   CONSTRAINT workshops_pkey PRIMARY KEY (id)
  * );
  * 
- * 2. ENABLE SECURITY:
- * ALTER TABLE workshops ENABLE ROW LEVEL SECURITY;
- * CREATE POLICY "Enable all access for everyone" ON workshops FOR ALL USING (true) WITH CHECK (true);
+ * -- 2. Enable Row Level Security (RLS)
+ * ALTER TABLE public.workshops ENABLE ROW LEVEL SECURITY;
  * 
- * 3. MANUAL DATA INSERTION (Run this if cloud is empty):
- * INSERT INTO workshops (id, title, theme, category, lead, date, venue, frequency, agenda, speakers, activities, metrics, feedback, budget, actionPlan)
- * VALUES ('1', 'Nurturing the Soul: Spiritual Curriculum 2024', '...', 'Spiritual Curriculum', 'Dr. Anita Sharma', '2024-03-15', '...', 'Annual', '[]', '[]', '[]', '{}', '{}', '{}', '[]')
- * ON CONFLICT (id) DO NOTHING;
+ * -- 3. Create a public access policy (Allows anyone to Read/Write/Delete)
+ * DROP POLICY IF EXISTS "Public Full Access" ON public.workshops;
+ * CREATE POLICY "Public Full Access" ON public.workshops 
+ * FOR ALL 
+ * USING (true) 
+ * WITH CHECK (true);
+ * ------------------------------------------------------------------
  */
 
 const supabaseUrl = 'https://lhetucfujitjisywjwkp.supabase.co';
