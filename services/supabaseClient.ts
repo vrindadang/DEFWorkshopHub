@@ -1,22 +1,40 @@
+
 import { createClient } from '@supabase/supabase-js';
 
-// Default placeholders that won't crash the constructor if env vars are missing
-const DEFAULT_URL = 'https://lhetucfujitjisywjwkp.supabase.co';
-const DEFAULT_KEY = 'sb_publishable_-FoCa_l-eD4Guvr1_M-t6w_oOY8i0XP';
+/**
+ * DATABASE SETUP INSTRUCTIONS:
+ * 
+ * 1. RUN SCHEMA DEFINITION:
+ * CREATE TABLE IF NOT EXISTS workshops (
+ *   id TEXT PRIMARY KEY,
+ *   title TEXT NOT NULL,
+ *   theme TEXT,
+ *   category TEXT NOT NULL,
+ *   lead TEXT NOT NULL,
+ *   date DATE NOT NULL,
+ *   venue TEXT,
+ *   frequency TEXT,
+ *   agenda JSONB DEFAULT '[]'::jsonb,
+ *   speakers JSONB DEFAULT '[]'::jsonb,
+ *   activities JSONB DEFAULT '[]'::jsonb,
+ *   metrics JSONB DEFAULT '{}'::jsonb,
+ *   feedback JSONB DEFAULT '{}'::jsonb,
+ *   budget JSONB DEFAULT '{}'::jsonb,
+ *   actionPlan JSONB DEFAULT '[]'::jsonb,
+ *   created_at TIMESTAMPTZ DEFAULT NOW()
+ * );
+ * 
+ * 2. ENABLE SECURITY:
+ * ALTER TABLE workshops ENABLE ROW LEVEL SECURITY;
+ * CREATE POLICY "Enable all access for everyone" ON workshops FOR ALL USING (true) WITH CHECK (true);
+ * 
+ * 3. MANUAL DATA INSERTION (Run this if cloud is empty):
+ * INSERT INTO workshops (id, title, theme, category, lead, date, venue, frequency, agenda, speakers, activities, metrics, feedback, budget, actionPlan)
+ * VALUES ('1', 'Nurturing the Soul: Spiritual Curriculum 2024', '...', 'Spiritual Curriculum', 'Dr. Anita Sharma', '2024-03-15', '...', 'Annual', '[]', '[]', '[]', '{}', '{}', '{}', '[]')
+ * ON CONFLICT (id) DO NOTHING;
+ */
 
-const supabaseUrl = process.env.SUPABASE_URL || DEFAULT_URL;
-const supabaseKey = process.env.SUPABASE_ANON_KEY || DEFAULT_KEY;
+const supabaseUrl = 'https://lhetucfujitjisywjwkp.supabase.co';
+const supabaseKey = 'sb_publishable_-FoCa_l-eD4Guvr1_M-t6w_oOY8i0XP';
 
-// Ensure the URL is valid before creating the client to prevent top-level errors
-const isValidUrl = (url: string) => {
-  try {
-    new URL(url);
-    return true;
-  } catch {
-    return false;
-  }
-};
-
-const finalUrl = isValidUrl(supabaseUrl) ? supabaseUrl : DEFAULT_URL;
-
-export const supabase = createClient(finalUrl, supabaseKey);
+export const supabase = createClient(supabaseUrl, supabaseKey);
