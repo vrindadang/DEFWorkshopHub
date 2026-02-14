@@ -1,10 +1,10 @@
-
 import React, { useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Workshop } from '../types';
 
 interface WorkshopDetailProps {
   workshops: Workshop[];
+  onDeleteWorkshop: (id: string) => Promise<void>;
 }
 
 const formatDate = (dateStr: string) => {
@@ -16,8 +16,9 @@ const formatDate = (dateStr: string) => {
   return `${day}-${month}-${year}`;
 };
 
-const WorkshopDetail: React.FC<WorkshopDetailProps> = ({ workshops }) => {
+const WorkshopDetail: React.FC<WorkshopDetailProps> = ({ workshops, onDeleteWorkshop }) => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const workshop = workshops.find(w => w.id === id);
 
   const totalIncurred = useMemo(() => {
@@ -31,6 +32,15 @@ const WorkshopDetail: React.FC<WorkshopDetailProps> = ({ workshops }) => {
     if (totalIncurred > allocated) return 'over';
     return 'within';
   }, [workshop, totalIncurred]);
+
+  const handleDeletion = async () => {
+    if (!workshop) return;
+    const confirmed = window.confirm(`Institutional Warning: Are you sure you want to permanently delete the records for "${workshop.title}"? This action cannot be undone.`);
+    if (confirmed) {
+      await onDeleteWorkshop(workshop.id);
+      navigate('/inventory');
+    }
+  };
 
   if (!workshop) {
     return (
@@ -68,14 +78,20 @@ const WorkshopDetail: React.FC<WorkshopDetailProps> = ({ workshops }) => {
             <h1 className="text-4xl md:text-5xl font-black text-slate-900 font-serif leading-tight">{workshop.title}</h1>
             <p className="text-xl text-slate-500 italic font-medium leading-relaxed max-w-2xl">"{workshop.theme}"</p>
           </div>
-          <div className="flex flex-col gap-4 shrink-0 w-full md:w-auto">
+          <div className="flex flex-col gap-3 shrink-0 w-full md:w-auto">
             <Link 
               to={`/edit/${workshop.id}`}
               className="w-full text-center px-8 py-4 bg-indigo-600 text-white rounded-2xl text-sm font-black hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-3 uppercase tracking-widest"
             >
               <span>✏️</span> Edit Records
             </Link>
-            <button className="w-full px-8 py-4 bg-white border border-slate-200 text-slate-700 rounded-2xl text-sm font-bold hover:bg-slate-50 transition-all shadow-sm flex items-center justify-center gap-3 uppercase tracking-widest">
+            <button 
+              onClick={handleDeletion}
+              className="w-full px-8 py-4 bg-white border border-red-100 text-red-500 rounded-2xl text-sm font-bold hover:bg-red-50 transition-all shadow-sm flex items-center justify-center gap-3 uppercase tracking-widest"
+            >
+              <span>🗑️</span> Delete Record
+            </button>
+            <button className="w-full px-8 py-3 bg-white border border-slate-200 text-slate-400 rounded-2xl text-[10px] font-bold hover:bg-slate-50 transition-all shadow-sm flex items-center justify-center gap-3 uppercase tracking-widest">
               <span>📄</span> Export PDF
             </button>
           </div>
