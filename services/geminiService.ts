@@ -1,11 +1,10 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
-import { Workshop, WorkshopCategory } from "../types";
-
-// Fixed: Corrected initialization to use process.env.API_KEY directly per SDK guidelines
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+import { Workshop } from "../types";
 
 export async function processWorkshopReport(rawText: string): Promise<Partial<Workshop>> {
+  // Initialize inside the function to ensure process.env.API_KEY is accessed at runtime
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
     contents: `Extract workshop details from the following report and structure it according to the schema. 
