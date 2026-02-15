@@ -37,6 +37,27 @@ const WorkshopDetail: React.FC<WorkshopDetailProps> = ({ workshops, onDeleteWork
     }
   };
 
+  const handleDownloadAttachment = async (e: React.MouseEvent) => {
+    if (!workshop || !workshop.attachmentUrl) return;
+    e.preventDefault();
+    
+    try {
+      const response = await fetch(workshop.attachmentUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', workshop.attachmentName || 'workshop-attachment');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Institutional Archive: Download failed. Falling back to direct link.", error);
+      window.open(workshop.attachmentUrl, '_blank');
+    }
+  };
+
   const handleExportPDF = async () => {
     if (!reportRef.current || !workshop) return;
     
@@ -262,6 +283,9 @@ const WorkshopDetail: React.FC<WorkshopDetailProps> = ({ workshops, onDeleteWork
             <tr><td className="font-bold">Scheduled Venue</td><td>{workshop.venue}</td></tr>
             <tr><td className="font-bold">Execution Cycle</td><td>{workshop.frequency}</td></tr>
             <tr><td className="font-bold">Total Reach</td><td>{workshop.metrics?.participantCount || 0} Participants</td></tr>
+            {workshop.attachmentUrl && (
+              <tr><td className="font-bold">Documentation Ref.</td><td>{workshop.attachmentName || 'Supplemental Data'}</td></tr>
+            )}
           </tbody>
         </table>
 
@@ -408,7 +432,7 @@ const WorkshopDetail: React.FC<WorkshopDetailProps> = ({ workshops, onDeleteWork
             </div>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-6 mt-12 pt-10 border-t border-slate-100 relative z-10">
+          <div className="grid grid-cols-2 lg:grid-cols-6 gap-6 mt-12 pt-10 border-t border-slate-100 relative z-10">
             <div className="space-y-1">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Workshop Lead</p>
               <p className="text-base font-bold text-slate-800">{workshop.lead}</p>
@@ -428,6 +452,21 @@ const WorkshopDetail: React.FC<WorkshopDetailProps> = ({ workshops, onDeleteWork
             <div className="space-y-1">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Reach</p>
               <p className="text-base font-bold text-slate-800">{workshop.metrics?.participantCount || 0} Participants</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Attachment</p>
+              {workshop.attachmentUrl ? (
+                <a 
+                  href={workshop.attachmentUrl} 
+                  onClick={handleDownloadAttachment}
+                  className="inline-flex items-center text-xs font-black text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-3 py-1 rounded-lg border border-indigo-100 transition-all truncate max-w-full"
+                  title={workshop.attachmentName}
+                >
+                  📂 {workshop.attachmentName || 'Download Archive'}
+                </a>
+              ) : (
+                <p className="text-xs font-bold text-slate-300">No supplemental data</p>
+              )}
             </div>
           </div>
         </div>

@@ -50,6 +50,8 @@ export interface Workshop {
   feedback: FeedbackSummary;
   budget: WorkshopBudget;
   actionPlan: string[];
+  attachmentUrl?: string;
+  attachmentName?: string;
 }
 
 export enum WorkshopCategory {

@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Workshop, WorkshopCategory, Speaker, AgendaItem, BudgetItem } from '../types';
+import { supabase } from '../services/supabaseClient';
 
 interface AddWorkshopProps {
   onAddWorkshop: (w: Workshop) => void;
@@ -12,9 +14,13 @@ const AddWorkshop: React.FC<AddWorkshopProps> = ({ onAddWorkshop, onUpdateWorksh
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEditMode = Boolean(id);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [isCustomCategory, setIsCustomCategory] = useState(false);
   const [customCategory, setCustomCategory] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [showConfigError, setShowConfigError] = useState(false);
+  const [errorType, setErrorType] = useState<'bucket' | 'rls' | null>(null);
   
   const initialFormData: Omit<Workshop, 'id'> = {
     title: '',
@@ -31,6 +37,8 @@ const AddWorkshop: React.FC<AddWorkshopProps> = ({ onAddWorkshop, onUpdateWorksh
     feedback: { averageRating: 5, qualitativeComments: [''] },
     budget: { allocated: 0, expenses: [{ description: '', amount: 0 }] },
     actionPlan: [''],
+    attachmentUrl: undefined,
+    attachmentName: undefined,
   };
 
   const [formData, setFormData] = useState<Omit<Workshop, 'id'>>(initialFormData);
@@ -105,6 +113,57 @@ const AddWorkshop: React.FC<AddWorkshopProps> = ({ onAddWorkshop, onUpdateWorksh
     const val = e.target.value;
     setCustomCategory(val);
     setFormData((prev) => ({ ...prev, category: val }));
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    setShowConfigError(false);
+    setErrorType(null);
+    
+    try {
+      const bucketName = 'workshop-attachments';
+      // Use a folder-based timestamp to ensure path uniqueness while preserving original filename
+      const filePath = `attachments/${Date.now()}/${file.name}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from(bucketName)
+        .upload(filePath, file);
+
+      if (uploadError) {
+        if (uploadError.message === 'Bucket not found') {
+          setErrorType('bucket');
+          setShowConfigError(true);
+          throw new Error('Infrastructure Error: Missing workshop-attachments bucket.');
+        }
+        if (uploadError.message.includes('row-level security') || (uploadError as any).status === 403) {
+          setErrorType('rls');
+          setShowConfigError(true);
+          throw new Error('Security Error: RLS Policy prevents public uploads.');
+        }
+        throw uploadError;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from(bucketName)
+        .getPublicUrl(filePath);
+
+      setFormData(prev => ({
+        ...prev,
+        attachmentUrl: publicUrl,
+        attachmentName: file.name
+      }));
+    } catch (error: any) {
+      console.error('Archive Hub Upload Error:', error.message);
+      if (!showConfigError) {
+        alert(error.message || 'Failed to sync attachment to cloud storage.');
+      }
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const handleNestedChange = (parent: string, field: string, value: any) => {
@@ -322,6 +381,16 @@ const AddWorkshop: React.FC<AddWorkshopProps> = ({ onAddWorkshop, onUpdateWorksh
                 <option value="One-time">One-time</option>
               </select>
             </div>
+            <div>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Total Participants (Reach)</label>
+              <input
+                type="number"
+                value={formData.metrics.participantCount || ''}
+                onChange={(e) => handleNestedChange('metrics', 'participantCount', Number(e.target.value))}
+                className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700"
+                placeholder="0"
+              />
+            </div>
             <div className="col-span-1 md:col-span-2">
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Venue / Location</label>
               <input
@@ -508,7 +577,7 @@ const AddWorkshop: React.FC<AddWorkshopProps> = ({ onAddWorkshop, onUpdateWorksh
           </div>
         </section>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-[2fr_1.2fr] gap-12 items-start">
           {/* Resource Profiles */}
           <section className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-xl space-y-8">
             <h2 className="text-2xl font-black text-slate-800 border-b border-slate-100 pb-6 flex items-center font-serif">
@@ -552,28 +621,101 @@ const AddWorkshop: React.FC<AddWorkshopProps> = ({ onAddWorkshop, onUpdateWorksh
             </div>
           </section>
 
-          {/* Training Modules (Activities) */}
-          <section className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-xl space-y-8">
-            <h2 className="text-2xl font-black text-slate-800 border-b border-slate-100 pb-6 flex items-center font-serif">
-              <span className="mr-4 bg-amber-50 p-3 rounded-2xl text-xl">🎨</span> Active Training Modules
-            </h2>
-            <div className="space-y-4">
-              {formData.activities.map((item, idx) => (
-                <div key={idx} className="flex gap-3 group items-center bg-slate-50 p-4 rounded-2xl border border-slate-200 hover:bg-white transition-all hover:shadow-lg">
-                  <span className="w-8 h-8 rounded-xl bg-amber-500 flex items-center justify-center text-white text-[10px] font-black shrink-0">{idx+1}</span>
-                  <input
-                    value={item}
-                    onChange={(e) => handleArrayChange('activities', idx, e.target.value)}
-                    className="flex-1 px-4 py-2 bg-transparent border-none focus:ring-0 outline-none font-bold text-slate-700"
-                  />
-                  <button type="button" onClick={() => removeItem('activities', idx)} className="text-red-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">✕</button>
-                </div>
-              ))}
-              <button type="button" onClick={() => addItem('activities', '')} className="w-full py-4 bg-amber-50 text-amber-700 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-amber-100 transition-all">
-                + New Training Module
-              </button>
-            </div>
-          </section>
+          {/* Right Column Stack: Training Modules & Attachments */}
+          <div className="space-y-12">
+            {/* Training Modules (Activities) */}
+            <section className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-xl space-y-8">
+              <h2 className="text-2xl font-black text-slate-800 border-b border-slate-100 pb-6 flex items-center font-serif">
+                <span className="mr-4 bg-amber-50 p-3 rounded-2xl text-xl">🎨</span> Active Training Modules
+              </h2>
+              <div className="space-y-4">
+                {formData.activities.map((item, idx) => (
+                  <div key={idx} className="flex gap-3 group items-center bg-slate-50 p-4 rounded-2xl border border-slate-200 hover:bg-white transition-all hover:shadow-lg">
+                    <span className="w-8 h-8 rounded-xl bg-amber-500 flex items-center justify-center text-white text-[10px] font-black shrink-0">{idx+1}</span>
+                    <input
+                      value={item}
+                      onChange={(e) => handleArrayChange('activities', idx, e.target.value)}
+                      className="flex-1 px-4 py-2 bg-transparent border-none focus:ring-0 outline-none font-bold text-slate-700 text-sm"
+                    />
+                    <button type="button" onClick={() => removeItem('activities', idx)} className="text-red-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">✕</button>
+                  </div>
+                ))}
+                <button type="button" onClick={() => addItem('activities', '')} className="w-full py-4 bg-amber-50 text-amber-700 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-amber-100 transition-all">
+                  + New Training Module
+                </button>
+              </div>
+            </section>
+
+            {/* Supplemental Archives (Attachments) */}
+            <section className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-xl space-y-8">
+               <h2 className="text-2xl font-black text-slate-800 border-b border-slate-100 pb-6 flex items-center font-serif">
+                  <span className="mr-4 bg-indigo-50 p-3 rounded-2xl text-xl">📂</span> Attachments
+               </h2>
+               <div className="space-y-6">
+                  {showConfigError && (
+                    <div className="p-6 bg-red-50 border border-red-200 rounded-3xl animate-in fade-in zoom-in duration-300">
+                       <h3 className="text-red-800 font-black text-sm uppercase tracking-widest mb-3 flex items-center gap-2">
+                         <span className="text-xl">⚠️</span> {errorType === 'rls' ? 'Security Policy Violation' : 'Configuration Required'}
+                       </h3>
+                       <p className="text-xs text-red-600 leading-relaxed font-medium">
+                         {errorType === 'rls' 
+                           ? 'The bucket exists, but Row-Level Security (RLS) policies prevent unauthenticated uploads.' 
+                           : 'The workshop-attachments bucket is missing from your project storage.'}
+                       </p>
+                       <div className="mt-4 p-3 bg-white/50 rounded-xl border border-red-100">
+                          <p className="text-[10px] font-black text-red-700 uppercase mb-2">Institutional Fix (SQL Editor):</p>
+                          <code className="text-[9px] text-red-500 block leading-tight overflow-x-auto whitespace-pre">
+                            {errorType === 'rls' 
+                              ? `CREATE POLICY "Public Upload" \nON storage.objects FOR INSERT \nWITH CHECK (bucket_id = 'workshop-attachments');`
+                              : `Go to Dashboard > Storage > New bucket\nName: workshop-attachments\nPublic: YES`}
+                          </code>
+                       </div>
+                       <p className="text-[9px] text-red-400 mt-2 font-bold uppercase tracking-tighter">Refer to services/supabaseClient.ts for the full fix script.</p>
+                    </div>
+                  )}
+                  <div className="flex flex-col gap-4">
+                     <input
+                       type="file"
+                       ref={fileInputRef}
+                       onChange={handleFileUpload}
+                       className="hidden"
+                       accept=".pdf,.xls,.xlsx,.doc,.docx,image/*"
+                     />
+                     <button
+                       type="button"
+                       onClick={() => fileInputRef.current?.click()}
+                       disabled={isUploading}
+                       className="w-full px-6 py-6 border-2 border-dashed border-indigo-100 bg-indigo-50/20 text-indigo-600 rounded-3xl text-sm font-black uppercase tracking-widest hover:bg-indigo-50 hover:border-indigo-300 transition-all flex flex-col items-center justify-center gap-2 group"
+                     >
+                       <span className="text-2xl group-hover:scale-110 transition-transform">{isUploading ? '⌛' : '📎'}</span>
+                       {isUploading ? 'Uploading Archive...' : 'Attach Supplemental Data'}
+                     </button>
+                     
+                     {formData.attachmentName && (
+                       <div className="flex items-center justify-between bg-white px-5 py-4 rounded-2xl border border-indigo-100 shadow-sm animate-in zoom-in-95 duration-200">
+                          <div className="flex items-center gap-3 overflow-hidden">
+                             <span className="text-xl">📄</span>
+                             <div className="overflow-hidden">
+                               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Archive</p>
+                               <p className="text-xs font-bold text-indigo-700 truncate">{formData.attachmentName}</p>
+                             </div>
+                          </div>
+                          <button 
+                           type="button" 
+                           onClick={() => setFormData(prev => ({ ...prev, attachmentUrl: undefined, attachmentName: undefined }))}
+                           className="w-8 h-8 rounded-full bg-red-50 text-red-400 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center shrink-0"
+                          >
+                            ✕
+                          </button>
+                       </div>
+                     )}
+                  </div>
+                  <p className="text-[10px] text-slate-400 italic text-center font-medium leading-relaxed">
+                    Institutional records support Excel spreadsheets, PDF reports, and High-Definition media attachments.
+                  </p>
+               </div>
+            </section>
+          </div>
         </div>
 
         {/* Global Control Bar */}

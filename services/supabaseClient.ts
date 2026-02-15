@@ -1,42 +1,37 @@
+
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * DARSHAN HUB - CLOUD PERSISTENCE SETUP
+ * DARSHAN ACADEMY WORKSHOP HUB - INFRASTRUCTURE SETUP
  * 
- * To ensure your workshops are saved and persist after a refresh, 
- * copy and execute the following SQL in your Supabase SQL Editor:
- * 
+ * FIXING "row violates row-level security policy" ERROR:
  * ------------------------------------------------------------------
- * -- 1. Create (or update) the workshops table
- * CREATE TABLE IF NOT EXISTS public.workshops (
- *   id text NOT NULL,
- *   title text NOT NULL,
- *   theme text,
- *   category text NOT NULL,
- *   lead text NOT NULL,
- *   date date NOT NULL,
- *   venue text,
- *   frequency text,
- *   agenda jsonb DEFAULT '[]'::jsonb,
- *   speakers jsonb DEFAULT '[]'::jsonb,
- *   activities jsonb DEFAULT '[]'::jsonb,
- *   metrics jsonb DEFAULT '{"participantCount": 0, "demographic": ""}'::jsonb,
- *   feedback jsonb DEFAULT '{"averageRating": 0, "qualitativeComments": []}'::jsonb,
- *   budget jsonb DEFAULT '{"allocated": 0, "expenses": []}'::jsonb,
- *   "actionPlan" jsonb DEFAULT '[]'::jsonb, -- Use double quotes for camelCase preservation
- *   created_at timestamp with time zone DEFAULT now(),
- *   CONSTRAINT workshops_pkey PRIMARY KEY (id)
- * );
+ * This error occurs because the bucket exists but doesn't allow uploads.
  * 
- * -- 2. Enable Row Level Security (RLS)
+ * RESOLUTION STEPS (SQL Editor):
+ * Copy and run this in your Supabase SQL Editor:
+ * 
+ * -- 1. Allow public uploads to 'workshop-attachments'
+ * CREATE POLICY "Public Upload" 
+ * ON storage.objects FOR INSERT 
+ * WITH CHECK (bucket_id = 'workshop-attachments');
+ * 
+ * -- 2. Allow public viewing of files
+ * CREATE POLICY "Public View" 
+ * ON storage.objects FOR SELECT 
+ * USING (bucket_id = 'workshop-attachments');
+ * 
+ * -- 3. Allow public updates/deletes (Institutional Management)
+ * CREATE POLICY "Public Update" 
+ * ON storage.objects FOR UPDATE 
+ * USING (bucket_id = 'workshop-attachments');
+ * 
+ * CREATE POLICY "Public Delete" 
+ * ON storage.objects FOR DELETE 
+ * USING (bucket_id = 'workshop-attachments');
+ * 
  * ALTER TABLE public.workshops ENABLE ROW LEVEL SECURITY;
- * 
- * -- 3. Create a public access policy (Allows anyone to Read/Write/Delete)
- * DROP POLICY IF EXISTS "Public Full Access" ON public.workshops;
- * CREATE POLICY "Public Full Access" ON public.workshops 
- * FOR ALL 
- * USING (true) 
- * WITH CHECK (true);
+ * CREATE POLICY "Public Full Access" ON public.workshops FOR ALL USING (true) WITH CHECK (true);
  * ------------------------------------------------------------------
  */
 

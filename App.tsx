@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
@@ -34,13 +35,14 @@ const App: React.FC = () => {
       metrics: w.metrics || { participantCount: 0, demographic: '' },
       feedback: w.feedback || { averageRating: 0, qualitativeComments: [] },
       budget: w.budget || { allocated: 0, expenses: [] },
-      actionPlan: Array.isArray(dbActionPlan) ? dbActionPlan : []
+      actionPlan: Array.isArray(dbActionPlan) ? dbActionPlan : [],
+      attachmentUrl: w.attachmentUrl || w.attachment_url || undefined,
+      attachmentName: w.attachmentName || w.attachment_name || undefined
     };
   };
 
-  // Helper to map State to DB format (matching the user's provided schema)
+  // Helper to map State to DB format
   const prepareForDatabase = (w: Workshop) => {
-    // Return the object as-is because the Workshop interface matches the camelCase schema
     return w;
   };
 

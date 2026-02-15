@@ -2,9 +2,8 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { Workshop } from "../types";
 
 export async function processWorkshopReport(rawText: string): Promise<Partial<Workshop>> {
-  // Initialize inside the function to avoid top-level ReferenceError and use the runtime API key
-  const apiKey = process.env.API_KEY || '';
-  const ai = new GoogleGenAI({ apiKey });
+  // Fix: Initializing GoogleGenAI with process.env.API_KEY directly as per SDK guidelines
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
@@ -96,7 +95,12 @@ export async function processWorkshopReport(rawText: string): Promise<Partial<Wo
   });
 
   try {
-    const data = JSON.parse(response.text.trim());
+    // Fix: Safely accessing the .text property from the response and handling potential undefined value
+    const responseText = response.text;
+    if (!responseText) {
+      throw new Error("No text content returned from the model.");
+    }
+    const data = JSON.parse(responseText.trim());
     return data;
   } catch (error) {
     console.error("Failed to parse Gemini response", error);
